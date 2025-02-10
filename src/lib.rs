@@ -9,7 +9,7 @@ use std::cmp::{Ord, Ordering};
 use std::ops::Not;
 
 /// The color of a node in the LLRB tree.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Color {
     /// A red node.
     Red,
@@ -78,25 +78,25 @@ where
 
     /// Returns `true` if the left child is red.
     fn is_left_red(&self) -> bool {
-        match self.left.as_ref() {
-            Some(left) => left.color == Color::Red,
+        match self.left {
+            Some(ref left) => left.color == Color::Red,
             None => false,
         }
     }
 
     /// Returns `true` if the right child is red.
     fn is_right_red(&self) -> bool {
-        match self.right.as_ref() {
-            Some(right) => right.color == Color::Red,
+        match self.right {
+            Some(ref right) => right.color == Color::Red,
             None => false,
         }
     }
 
     /// Returns `true` if the left child of the left child is red.
     fn is_left_of_left_red(&self) -> bool {
-        match self.left.as_ref() {
-            Some(left) => match left.left.as_ref() {
-                Some(left) => left.color == Color::Red,
+        match self.left {
+            Some(ref left) => match left.left {
+                Some(ref left) => left.color == Color::Red,
                 None => false,
             },
             None => false,
@@ -105,9 +105,9 @@ where
 
     /// Returns `true` if the left child of the right child is red.
     fn is_left_of_right_red(&self) -> bool {
-        match self.right.as_ref() {
-            Some(right) => match right.left.as_ref() {
-                Some(left) => left.color == Color::Red,
+        match self.right {
+            Some(ref right) => match right.left {
+                Some(ref left) => left.color == Color::Red,
                 None => false,
             },
             None => false,
@@ -141,7 +141,7 @@ where
     fn move_red_right(mut self: Box<Self>) -> Box<Self> {
         self = self.flip_colors();
 
-        if let Some(left) = self.left.as_ref() {
+        if let Some(ref left) = self.left {
             if left.is_left_red() {
                 self = self.rotate_right();
                 self = self.flip_colors();
@@ -193,14 +193,12 @@ where
     fn flip_colors(mut self: Box<Self>) -> Box<Self> {
         self.color = !self.color;
 
-        if let Some(mut left) = self.left {
+        if let Some(ref mut left) = self.left {
             left.color = !left.color;
-            self.left = Some(left);
         }
 
-        if let Some(mut right) = self.right {
+        if let Some(ref mut right) = self.right {
             right.color = !right.color;
-            self.right = Some(right);
         }
         self
     }
@@ -389,7 +387,7 @@ where
     fn find_min_node(node: Option<&Box<Node<K, V>>>) -> Option<&Box<Node<K, V>>> {
         node.and_then(|n| {
             let mut min = n;
-            while let Some(l) = min.left.as_ref() {
+            while let Some(ref l) = min.left {
                 min = l;
             }
 
