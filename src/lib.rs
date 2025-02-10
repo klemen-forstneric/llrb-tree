@@ -273,7 +273,7 @@ where
     pub fn insert(&mut self, key: K, value: V) {
         let mut root = Self::insert_node(self.root.take(), key, value);
 
-        if let Some(r) = root.as_mut() {
+        if let Some(ref mut r) = root {
             r.color = Color::Black;
         }
 
@@ -329,7 +329,7 @@ where
     pub fn delete(&mut self, key: K) {
         let mut root = Self::delete_node(self.root.take(), key);
 
-        if let Some(r) = root.as_mut() {
+        if let Some(ref mut r) = root {
             r.color = Color::Black;
         }
 
