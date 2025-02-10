@@ -422,10 +422,123 @@ mod tests {
     use super::*;
 
     #[test]
-    fn insert() {
-        let mut tree: Tree<i32, &'static str> = Tree::new();
-        tree.insert(1, "1");
+    fn test_insert_and_search() {
+        let mut tree: Tree<i32, &str> = Tree::new();
+        tree.insert(10, "ten");
+        tree.insert(5, "five");
+        tree.insert(15, "fifteen");
 
-        assert_eq!(Some(&"1"), tree.search(1));
+        assert_eq!(tree.search(10), Some(&"ten"));
+        assert_eq!(tree.search(5), Some(&"five"));
+        assert_eq!(tree.search(15), Some(&"fifteen"));
+        // Searching for a non-existent key should return None.
+        assert_eq!(tree.search(20), None);
+    }
+
+    #[test]
+    fn test_update_existing_key() {
+        let mut tree: Tree<i32, &str> = Tree::new();
+        tree.insert(42, "initial");
+        assert_eq!(tree.search(42), Some(&"initial"));
+
+        // Insert the same key with a new value.
+        tree.insert(42, "updated");
+        assert_eq!(tree.search(42), Some(&"updated"));
+    }
+
+    #[test]
+    fn test_delete_leaf() {
+        let mut tree: Tree<i32, &str> = Tree::new();
+        tree.insert(20, "twenty");
+        tree.insert(10, "ten");
+        tree.insert(30, "thirty");
+
+        // Delete a leaf node.
+        tree.delete(10);
+        assert_eq!(tree.search(10), None);
+        // The other keys should remain accessible.
+        assert_eq!(tree.search(20), Some(&"twenty"));
+        assert_eq!(tree.search(30), Some(&"thirty"));
+    }
+
+    #[test]
+    fn test_delete_node_with_one_child() {
+        let mut tree: Tree<i32, &str> = Tree::new();
+        // Create a situation where a node has only one child.
+        tree.insert(20, "twenty");
+        tree.insert(10, "ten");
+        // Right child of 10 will be inserted which makes 10 have one child.
+        tree.insert(15, "fifteen");
+
+        tree.delete(10);
+        // Key 10 should now be removed.
+        assert_eq!(tree.search(10), None);
+        // The rest of the keys should be present.
+        assert_eq!(tree.search(15), Some(&"fifteen"));
+        assert_eq!(tree.search(20), Some(&"twenty"));
+    }
+
+    #[test]
+    fn test_delete_node_with_two_children() {
+        let mut tree: Tree<i32, &str> = Tree::new();
+        // Build a tree with several nodes so that one deletion has two children (more complex).
+        tree.insert(40, "forty");
+        tree.insert(20, "twenty");
+        tree.insert(60, "sixty");
+        tree.insert(10, "ten");
+        tree.insert(30, "thirty");
+        tree.insert(50, "fifty");
+        tree.insert(70, "seventy");
+
+        // Delete a node that has two children.
+        tree.delete(20);
+        assert_eq!(tree.search(20), None);
+        // Check that the other keys are still accessible.
+        assert_eq!(tree.search(10), Some(&"ten"));
+        assert_eq!(tree.search(30), Some(&"thirty"));
+        assert_eq!(tree.search(40), Some(&"forty"));
+        assert_eq!(tree.search(50), Some(&"fifty"));
+        assert_eq!(tree.search(60), Some(&"sixty"));
+        assert_eq!(tree.search(70), Some(&"seventy"));
+    }
+
+    #[test]
+    fn test_delete_nonexistent_key() {
+        let mut tree: Tree<i32, &str> = Tree::new();
+        tree.insert(1, "one");
+        tree.insert(2, "two");
+
+        // Trying to delete a key that doesn't exist should leave the tree unchanged.
+        tree.delete(3);
+        assert_eq!(tree.search(1), Some(&"one"));
+        assert_eq!(tree.search(2), Some(&"two"));
+        assert_eq!(tree.search(3), None);
+    }
+
+    #[test]
+    fn test_complex_insert_delete() {
+        let mut tree: Tree<i32, i32> = Tree::new();
+
+        // Insert numbers 1 to 20.
+        for i in 1..=20 {
+            tree.insert(i, i * 10);
+        }
+
+        // Delete a few keys.
+        for key in &[3, 5, 7, 11, 13, 17] {
+            tree.delete(*key);
+        }
+
+        // Check that deleted keys are gone.
+        for key in &[3, 5, 7, 11, 13, 17] {
+            assert_eq!(tree.search(*key), None);
+        }
+
+        // Check remaining keys.
+        for key in 1..=20 {
+            if ![3, 5, 7, 11, 13, 17].contains(&key) {
+                assert_eq!(tree.search(key), Some(&(key * 10)));
+            }
+        }
     }
 }
