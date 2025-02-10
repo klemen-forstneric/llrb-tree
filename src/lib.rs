@@ -1,15 +1,34 @@
+//! A Left-Leaning Red-Black (LLRB) tree implementation.
+//!
+//! This module implements an LLRB tree supporting insertion, deletion,
+//! and search of key/value pairs. The implementation uses the standard
+//! red-black tree rebalancing algorithm and maintains the invariant that
+//! the tree's root is always black.
+
 use std::cmp::{Ord, Ordering};
 use std::ops::Not;
 
-#[derive(PartialEq)]
+/// The color of a node in the LLRB tree.
+#[derive(Debug, PartialEq)]
 pub enum Color {
+    /// A red node.
     Red,
+    /// A black node.
     Black,
 }
 
 impl Not for Color {
     type Output = Self;
 
+    /// Flips the color.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use llrb_tree::Color;
+    /// assert_eq!(!Color::Red, Color::Black);
+    /// assert_eq!(!Color::Black, Color::Red);
+    /// ```
     fn not(self) -> Self::Output {
         match self {
             Color::Red => Color::Black,
@@ -18,16 +37,24 @@ impl Not for Color {
     }
 }
 
+/// A node in the LLRB tree.
+///
+/// Each node stores a key/value pair, its children, and its color.
+#[derive(Debug)]
 struct Node<K, V>
 where
     K: Clone + Ord,
     V: Clone,
 {
+    /// The left child.
     pub left: Option<Box<Node<K, V>>>,
+    /// The right child.
     pub right: Option<Box<Node<K, V>>>,
+    /// The color of this node.
     pub color: Color,
-
+    /// The key of the node.
     pub key: K,
+    /// The associated value with the key.
     pub value: V,
 }
 
@@ -36,6 +63,9 @@ where
     K: Clone + Ord,
     V: Clone,
 {
+    /// Creates a new `Node` with the given key and value.
+    ///
+    /// New nodes are red by default.
     fn new(key: K, value: V) -> Self {
         Self {
             key,
@@ -46,21 +76,24 @@ where
         }
     }
 
-    fn is_left_red(self: &Box<Self>) -> bool {
+    /// Returns `true` if the left child is red.
+    fn is_left_red(&self) -> bool {
         match self.left.as_ref() {
             Some(left) => left.color == Color::Red,
             None => false,
         }
     }
 
-    fn is_right_red(self: &Box<Self>) -> bool {
+    /// Returns `true` if the right child is red.
+    fn is_right_red(&self) -> bool {
         match self.right.as_ref() {
             Some(right) => right.color == Color::Red,
             None => false,
         }
     }
 
-    fn is_left_of_left_red(self: &Box<Self>) -> bool {
+    /// Returns `true` if the left child of the left child is red.
+    fn is_left_of_left_red(&self) -> bool {
         match self.left.as_ref() {
             Some(left) => match left.left.as_ref() {
                 Some(left) => left.color == Color::Red,
@@ -70,7 +103,8 @@ where
         }
     }
 
-    fn is_left_of_right_red(self: &Box<Self>) -> bool {
+    /// Returns `true` if the left child of the right child is red.
+    fn is_left_of_right_red(&self) -> bool {
         match self.right.as_ref() {
             Some(right) => match right.left.as_ref() {
                 Some(left) => left.color == Color::Red,
@@ -80,6 +114,10 @@ where
         }
     }
 
+    /// Moves a red node left.
+    ///
+    /// This method is used during deletion to ensure that the left child
+    /// or one of its descendants is red.
     fn move_red_left(mut self: Box<Self>) -> Box<Self> {
         self = self.flip_colors();
 
@@ -96,6 +134,10 @@ where
         self
     }
 
+    /// Moves a red node right.
+    ///
+    /// This method is used during deletion to ensure that the right child
+    /// or one of its descendants is red.
     fn move_red_right(mut self: Box<Self>) -> Box<Self> {
         self = self.flip_colors();
 
@@ -109,6 +151,9 @@ where
         self
     }
 
+    /// Rotates the tree to the left.
+    ///
+    /// Returns the new root of the subtree.
     fn rotate_left(mut self: Box<Self>) -> Box<Self> {
         match self.right {
             Some(mut root) => {
@@ -124,6 +169,9 @@ where
         }
     }
 
+    /// Rotates the tree to the right.
+    ///
+    /// Returns the new root of the subtree.
     fn rotate_right(mut self: Box<Self>) -> Box<Self> {
         match self.left {
             Some(mut root) => {
@@ -139,6 +187,9 @@ where
         }
     }
 
+    /// Flips the colors of this node and its immediate children.
+    ///
+    /// Returns `self` with flipped colors.
     fn flip_colors(mut self: Box<Self>) -> Box<Self> {
         self.color = !self.color;
 
@@ -155,6 +206,9 @@ where
     }
 }
 
+/// A Left-Leaning Red-Black (LLRB) tree.
+///
+/// This tree supports insertion, deletion, and search operations.
 pub struct Tree<K, V>
 where
     K: Clone + Ord,
@@ -168,10 +222,30 @@ where
     K: Clone + Ord,
     V: Clone,
 {
+    /// Creates a new empty `Tree`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use llrb_tree::Tree;
+    /// let tree: Tree<i32, &str> = Tree::new();
+    /// ```
     pub fn new() -> Self {
         Self { root: None }
     }
 
+    /// Searches for a value associated with the given key.
+    ///
+    /// Returns a reference to the value if found, or `None` otherwise.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use llrb_tree::Tree;
+    /// let mut tree = Tree::new();
+    /// tree.insert(1, "one");
+    /// assert_eq!(tree.search(1), Some(&"one"));
+    /// ```
     pub fn search(&self, key: K) -> Option<&V> {
         let mut current = self.root.as_ref();
 
@@ -186,6 +260,18 @@ where
         None
     }
 
+    /// Inserts a key-value pair into the tree.
+    ///
+    /// If the key already exists, its value is updated.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use llrb_tree::Tree;
+    /// let mut tree = Tree::new();
+    /// tree.insert(1, "one");
+    /// assert_eq!(tree.search(1), Some(&"one"));
+    /// ```
     pub fn insert(&mut self, key: K, value: V) {
         let mut root = Self::insert_node(self.root.take(), key, value);
 
@@ -196,6 +282,7 @@ where
         self.root = root;
     }
 
+    /// Recursive helper for insertion.
     fn insert_node(node: Option<Box<Node<K, V>>>, key: K, value: V) -> Option<Box<Node<K, V>>> {
         match node {
             None => Some(Box::new(Node::new(key, value))),
@@ -211,6 +298,7 @@ where
         }
     }
 
+    /// Balances the subtree by performing necessary rotations and color flips.
     fn balance(mut n: Box<Node<K, V>>) -> Box<Node<K, V>> {
         if n.is_right_red() && !n.is_left_red() {
             n = n.rotate_left()
@@ -227,6 +315,19 @@ where
         n
     }
 
+    /// Deletes a key and its associated value from the tree.
+    ///
+    /// If the key does not exist, the tree is left unchanged.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use llrb_tree::Tree;
+    /// let mut tree = Tree::new();
+    /// tree.insert(1, "one");
+    /// tree.delete(1);
+    /// assert_eq!(tree.search(1), None);
+    /// ```
     pub fn delete(&mut self, key: K) {
         let mut root = Self::delete_node(self.root.take(), key);
 
@@ -237,6 +338,7 @@ where
         self.root = root;
     }
 
+    /// Recursive helper for deletion.
     fn delete_node(node: Option<Box<Node<K, V>>>, key: K) -> Option<Box<Node<K, V>>> {
         node.and_then(|mut n| {
             match key.cmp(&n.key) {
@@ -283,6 +385,7 @@ where
         })
     }
 
+    /// Locates the node with the minimum key in the subtree.
     fn find_min_node(node: Option<&Box<Node<K, V>>>) -> Option<&Box<Node<K, V>>> {
         node.and_then(|n| {
             let mut min = n;
@@ -294,6 +397,7 @@ where
         })
     }
 
+    /// Deletes the minimum node from the subtree.
     fn delete_min_node(node: Option<Box<Node<K, V>>>) -> Option<Box<Node<K, V>>> {
         node.and_then(|mut n| {
             // If n.left is None, we know n is the min node of this subtree. In order to
